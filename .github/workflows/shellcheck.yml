@@ -41,7 +41,7 @@ jobs:
         run: |
           shopt -s globstar nullglob
           scripts=( bash/**/*.sh )
-          libs=( bash/**/lib )
+          libs=( bash/lib/**/lib )
           all_files=( "${scripts[@]}" "${libs[@]}" )
 
           if [[ ${#all_files[@]} -gt 0 ]]; then
