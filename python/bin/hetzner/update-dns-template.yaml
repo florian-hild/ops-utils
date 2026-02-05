@@ -1,0 +1,4 @@
+log_file: /var/log/update-dns/update-dns.jsonl
+hcloud_token: your-hetzner-api-token
+zone_name: example.com
+record_name: home
