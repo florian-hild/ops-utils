@@ -1,0 +1,10 @@
+[project]
+name = "hetzner"
+version = "0.1.0"
+description = "Hetzner scripts"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "hcloud>=2.16.0",
+    "pyyaml>=6.0.3",
+]
