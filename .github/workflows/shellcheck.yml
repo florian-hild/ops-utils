@@ -1,19 +1,20 @@
-# Lint Bash scripts under bash/ and any .sh files using shellcheck
-name: Shellcheck — bash lint
-run-name: Shellcheck — bash lint
+# Lint Bash scripts under bash/ directory using shellcheck
+# Checks both .sh files and lib files without extension
+name: ShellCheck Bash Lint
+run-name: ShellCheck Bash Lint
 
 on:
   push:
     branches:
-      - 'main'
+      - main
     paths:
-      - 'bash/**'
-      - '.github/workflows/shellcheck.yml'
+      - "bash/**"
+      - ".github/workflows/shellcheck.yml"
   pull_request:
-    types: [opened, reopened, ready_for_review, synchroniye]
+    types: [opened, reopened, ready_for_review, synchronize]
     paths:
-      - 'bash/**'
-      - '.github/workflows/shellcheck.yml'
+      - "bash/**"
+      - ".github/workflows/shellcheck.yml"
   workflow_dispatch:
 
 concurrency:
@@ -22,17 +23,31 @@ concurrency:
 
 jobs:
   shellcheck:
-    name: shellcheck
+    name: ShellCheck Validation
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v6
 
-      - name: Install shellcheck
+      - name: Install ShellCheck
         run: |
-          sudo apt-get update
+          sudo apt-get update -qq
           sudo apt-get install -y shellcheck
+          shellcheck --version
 
-      - name: Run shellcheck
+      - name: Lint Bash scripts and lib files
         run: |
-          find ./bash -name "*.sh" -type f -print0 | xargs -0 shellcheck --color=always --external-sources
+          shopt -s globstar nullglob
+          scripts=( bash/**/*.sh )
+          libs=( bash/**/lib )
+          all_files=( "${scripts[@]}" "${libs[@]}" )
+
+          if [[ ${#all_files[@]} -gt 0 ]]; then
+            echo "Checking ${#scripts[@]} .sh files and ${#libs[@]} lib files..."
+            shellcheck --color=always --external-sources --severity=style "${all_files[@]}"
+          else
+            echo "No bash files found to check"
+            exit 0
+          fi

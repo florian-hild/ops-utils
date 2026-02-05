@@ -1,19 +1,19 @@
-# Lint Python files under python/ using ruff
-name: Python — ruff lint
-run-name: Python — ruff lint
+# Lint and format Python files under python/ using Ruff
+name: Ruff Python Lint
+run-name: Ruff Python Lint
 
 on:
   push:
     branches:
-      - 'main'
+      - main
     paths:
-      - 'python/**'
-      - '.github/workflows/python-ruff.yml'
+      - "python/**"
+      - ".github/workflows/python-ruff.yml"
   pull_request:
-    types: [opened, reopened, ready_for_review, synchroniye]
+    types: [opened, reopened, ready_for_review, synchronize]
     paths:
-      - 'python/**'
-      - '.github/workflows/python-ruff.yml'
+      - "python/**"
+      - ".github/workflows/python-ruff.yml"
   workflow_dispatch:
 
 concurrency:
@@ -22,14 +22,24 @@ concurrency:
 
 jobs:
   ruff:
-    name: ruff check
+    name: Ruff Validation
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v6
 
-      - name: Run ruff (check)
+      - name: Run Ruff linter
         uses: astral-sh/ruff-action@v3
         with:
           version: latest
           src: "./python"
+          args: "check --output-format=github"
+
+      - name: Run Ruff formatter check
+        uses: astral-sh/ruff-action@v3
+        with:
+          version: latest
+          src: "./python"
+          args: "format --check"
