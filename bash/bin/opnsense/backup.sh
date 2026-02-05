@@ -12,7 +12,9 @@ export LANG=C
 
 import() {
     local module="${1}"
-    local lib_base_dir='../../lib'
+    # shellcheck disable=SC2155
+    local lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    local lib_base_dir="${lib_dir}/../../lib"
     local lib_file="${lib_base_dir}/${module}/lib"
 
     if [[ ! -f "${lib_file}" ]]; then
