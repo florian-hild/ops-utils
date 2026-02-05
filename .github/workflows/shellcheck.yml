@@ -1,0 +1,38 @@
+# Lint Bash scripts under bash/ and any .sh files using shellcheck
+name: Shellcheck — bash lint
+run-name: Shellcheck — bash lint
+
+on:
+  push:
+    branches:
+      - 'main'
+    paths:
+      - 'bash/**'
+      - '.github/workflows/shellcheck.yml'
+  pull_request:
+    types: [opened, reopened, ready_for_review, synchroniye]
+    paths:
+      - 'bash/**'
+      - '.github/workflows/shellcheck.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  shellcheck:
+    name: shellcheck
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Install shellcheck
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck
+
+      - name: Run shellcheck
+        run: |
+          find ./bash -name "*.sh" -type f -print0 | xargs -0 shellcheck --color=always --external-sources
