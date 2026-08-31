@@ -19,86 +19,38 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  discover:
-    name: Discover projects
+  changes:
+    name: Detect changed projects
     runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:
-      dirs: ${{ steps.join.outputs.dirs || '' }}
+      changed: ${{ steps.pc.outputs.changed || '[]' }}
+      changed_dirs: ${{ steps.pc.outputs.changed_dirs || '' }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
-      # One group per project directory (bash/bin/<name>, bash/lib/<name>),
-      # derived from the git index so new projects are picked up without
-      # touching this file. The first three path segments name the project.
-      - name: Find bash projects
-        id: find
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          # Tracked files only, so untracked local junk never becomes a group.
-          mapfile -t groups < <(git ls-files -- bash/ | cut -d/ -f1-3 | sort -u)
-
-          if [[ "${#groups[@]}" -eq 0 ]]; then
-            echo "::warning::No bash projects found under bash/"
-            echo "groups=[]" >> "${GITHUB_OUTPUT}"
-            exit 0
-          fi
-
-          echo "Found ${#groups[@]} bash project(s):"
-          printf '  %s\n' "${groups[@]}"
-
-          # Group keys stay p0..pN so the path-changes outputs remain valid
-          # identifiers; the join step maps them back to directories.
-          groups_json="$(printf '%s\n' "${groups[@]}" | jq -R . | jq -sc .)"
-
-          # .editorconfig holds the shfmt rules for every script, so a change
-          # to it marks every group changed. The bare directory pattern also
-          # catches a shell script placed directly in a project directory.
-          paths_json="$(
-            printf '%s\n' "${groups[@]}" | jq -R . | jq -sc \
-              'to_entries | map({key: ("p" + (.key | tostring)), value: [(.value + "/**"), .value, ".editorconfig"]}) | from_entries'
-          )"
-
-          echo "groups=${groups_json}" >> "${GITHUB_OUTPUT}"
-          echo "paths=${paths_json}" >> "${GITHUB_OUTPUT}"
-
-      # Manual runs have no base to diff against, so every group counts as
-      # changed there and the whole tree is linted.
+      # A project is the first three path segments under bash/
+      # (bash/bin/<name>, bash/lib/<name>), discovered from the git index so
+      # new projects need no workflow change. .editorconfig holds the shfmt
+      # rules for every script, so a change to it marks every project
+      # changed. Manual runs have no base to diff against, so every project
+      # counts as changed there.
       - name: Detect changed projects
-        id: changes
-        if: steps.find.outputs.groups != '[]'
+        id: pc
         uses: florian-hild/actions/path-changes@v2
         with:
-          paths: ${{ steps.find.outputs.paths }}
-
-      - name: Join changed projects
-        id: join
-        if: steps.find.outputs.groups != '[]'
-        shell: bash
-        env:
-          PROJECTS: ${{ steps.find.outputs.groups }}
-          RESULTS: ${{ steps.changes.outputs.results }}
-        run: |
-          set -euo pipefail
-
-          dirs="$(
-            jq -rn --argjson groups "${PROJECTS}" --argjson results "${RESULTS}" \
-              '[$groups | to_entries[] | select($results[("p" + (.key | tostring))]) | .value] | join(" ")'
-          )"
-
-          echo "dirs=${dirs}" >> "${GITHUB_OUTPUT}"
-          echo "Changed project dir(s): ${dirs}"
+          root: bash
+          depth: 3
+          include: .editorconfig
 
   lint:
     name: Lint
-    needs: discover
-    if: needs.discover.outputs.dirs != ''
+    needs: changes
+    if: needs.changes.outputs.changed != '[]'
     uses: florian-hild/reusable-workflows/.github/workflows/shell-lint.yml@v2
     with:
       check_format: true
-      paths: ${{ needs.discover.outputs.dirs }}
+      paths: ${{ needs.changes.outputs.changed_dirs }}
