@@ -1,0 +1,26 @@
+---
+name: Python Lint
+run-name: Python Lint
+
+on:
+  pull_request:
+    types: [opened, reopened, ready_for_review, synchronize, labeled]
+    paths:
+      - .github/workflows/python-lint.yml
+      - python/**
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Lint
+    uses: florian-hild/reusable-workflows/.github/workflows/python-lint.yml@v2
+    with:
+      check_format: true
+      working_directory: python
