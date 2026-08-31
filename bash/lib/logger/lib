@@ -9,8 +9,8 @@
 export LANG=C
 
 if [[ "${0}" == "${BASH_SOURCE[0]}" ]]; then
-  echo "This script must be sourced, not executed." >&2
-  exit 1
+    echo "This script must be sourced, not executed." >&2
+    exit 1
 fi
 
 LOGGER_NO_TIMESTAMP="${LOGGER_NO_TIMESTAMP:-}"
@@ -18,7 +18,7 @@ LOGGER_NO_STACK="${LOGGER_NO_STACK:-}"
 LOGGER_COLOR="${LOGGER_COLOR:-}"
 LOGGER_DEBUG_MODE="${LOGGER_DEBUG_MODE:-}"
 LOGGER_TRACE_MODE="${LOGGER_TRACE_MODE:-}"
-LOGGER_OUTPUT_FORMAT="${LOGGER_OUTPUT_FORMAT:-plain}"  # Options: "plain" or "json"
+LOGGER_OUTPUT_FORMAT="${LOGGER_OUTPUT_FORMAT:-plain}" # Options: "plain" or "json"
 
 # Formats log output as JSON
 # Arguments:
@@ -26,29 +26,29 @@ LOGGER_OUTPUT_FORMAT="${LOGGER_OUTPUT_FORMAT:-plain}"  # Options: "plain" or "js
 # Returns:
 #   0 - Success
 print_json() {
-  local json="{"
-  local line=""
-  local key=""
-  local value=""
+    local json="{"
+    local line=""
+    local key=""
+    local value=""
 
-  # Loop through array and build JSON object
-  for line in "${@}"; do
-    # Split key and value on first colon
-    IFS=':' read -r key value <<< "${line}"
+    # Loop through array and build JSON object
+    for line in "${@}"; do
+        # Split key and value on first colon
+        IFS=':' read -r key value <<<"${line}"
 
-    # Escape double quotes and backslashes in value
-    value="${value//\\/\\\\}"
-    value="${value//\"/\\\"}"
+        # Escape double quotes and backslashes in value
+        value="${value//\\/\\\\}"
+        value="${value//\"/\\\"}"
 
-    # Add key and value to JSON object
-    json+="\"${key}\":\"${value}\","
-  done
+        # Add key and value to JSON object
+        json+="\"${key}\":\"${value}\","
+    done
 
-  # Remove trailing comma
-  json="${json%,}"
+    # Remove trailing comma
+    json="${json%,}"
 
-  json+="}"
-  printf "%s\n" "${json}"
+    json+="}"
+    printf "%s\n" "${json}"
 }
 
 # Creates a stacktrace from the call stack and stores it in __STACK__ global variable
@@ -57,19 +57,19 @@ print_json() {
 # Returns:
 #   0 - Success
 create_stacktrace() {
-  local trace=""
-  local func=""
+    local trace=""
+    local func=""
 
-  # Loop through array and build trace
-  for func in "${@}"; do
-    # Build trace append func before last func
+    # Loop through array and build trace
+    for func in "${@}"; do
+        # Build trace append func before last func
+        # shellcheck disable=SC2086
+        trace="${func:+".$(/bin/echo "${func}" | /usr/bin/awk '{print $2}')"}${trace}"
+    done
+
+    # Concatenate string with ScriptName.trace:LineNr
     # shellcheck disable=SC2086
-    trace="${func:+".$(/bin/echo "${func}" | /usr/bin/awk '{print $2}')"}${trace}"
-  done
-
-  # Concatenate string with ScriptName.trace:LineNr
-  # shellcheck disable=SC2086
-  __STACK__="at $(/usr/bin/basename "${0}")${trace}:$(/bin/echo "${functions[0]}" | /usr/bin/awk '{print $1}')"
+    __STACK__="at $(/usr/bin/basename "${0}")${trace}:$(/bin/echo "${functions[0]}" | /usr/bin/awk '{print $1}')"
 }
 
 # Main logging function supporting multiple log levels and optional features
@@ -87,139 +87,139 @@ create_stacktrace() {
 #   0 - Success
 #   1 - Invalid log level
 log() {
-  local log_level="${1:-"warn"}"
-  local log_message="${2:-"No log message provided!"}"
-  local log_timestamp=""
-  local formatted_level=""
-  local plain_level=""
+    local log_level="${1:-"warn"}"
+    local log_message="${2:-"No log message provided!"}"
+    local log_timestamp=""
+    local formatted_level=""
+    local plain_level=""
 
-  # Skip TRACE messages unless LOGGER_TRACE_MODE is set
-  if [[ "${log_level,,}" == "trace" ]] && [[ -z "${LOGGER_TRACE_MODE// }" ]]; then
-    return 0
-  fi
-
-  # Skip DEBUG messages unless LOGGER_DEBUG_MODE or LOGGER_TRACE_MODE is set
-  if [[ "${log_level,,}" == "debug" ]] && [[ -z "${LOGGER_DEBUG_MODE// }" ]] && [[ -z "${LOGGER_TRACE_MODE// }" ]]; then
-    return 0
-  fi
-
-  # If var LOGGER_NO_TIMESTAMP not set, use timestamp
-  if [[ -z "${LOGGER_NO_TIMESTAMP// }" ]]; then
-    log_timestamp="$(date +'%Y-%m-%dT%H:%M:%S%z')"
-  fi
-
-  # Determine if colored output should be used
-  # Colors are enabled when:
-  #   - Output format is plain (not JSON)
-  #   - Terminal is available (TERM is set and not "dumb")
-  #   - LOGGER_COLOR is not set (empty means colors enabled by default)
-  local use_color=""
-  if [[ "${LOGGER_OUTPUT_FORMAT}" != "json" ]]; then
-    if [[ -n "${TERM}" && "${TERM}" != "dumb" && -n "${LOGGER_COLOR}" ]]; then
-      use_color="true"
+    # Skip TRACE messages unless LOGGER_TRACE_MODE is set
+    if [[ "${log_level,,}" == "trace" ]] && [[ -z "${LOGGER_TRACE_MODE// /}" ]]; then
+        return 0
     fi
-  fi
 
-  case "${log_level// }" in
-    trace|TRACE)
-      if [[ -z "${LOGGER_NO_STACK// }" ]]; then
-        # Create array with "LineNr FuncName ScriptName"
-        local -a functions=()
-        local frame=0
-        while caller "${frame}" > /dev/null 2>&1; do
-            functions+=("$(caller "${frame}")")
-            ((frame++))
-        done
+    # Skip DEBUG messages unless LOGGER_DEBUG_MODE or LOGGER_TRACE_MODE is set
+    if [[ "${log_level,,}" == "debug" ]] && [[ -z "${LOGGER_DEBUG_MODE// /}" ]] && [[ -z "${LOGGER_TRACE_MODE// /}" ]]; then
+        return 0
+    fi
 
-        create_stacktrace "${functions[@]}"
-      fi
+    # If var LOGGER_NO_TIMESTAMP not set, use timestamp
+    if [[ -z "${LOGGER_NO_TIMESTAMP// /}" ]]; then
+        log_timestamp="$(date +'%Y-%m-%dT%H:%M:%S%z')"
+    fi
 
-      plain_level="TRACE"
-      if [[ -n "${use_color}" ]]; then
-        formatted_level="$(tput setaf 7)TRACE$(tput sgr0) "
-      else
-        formatted_level="TRACE "
-      fi
-      ;;
-    debug|DEBUG)
-      plain_level="DEBUG"
-      if [[ -n "${use_color}" ]]; then
-        formatted_level="$(tput setaf 4)DEBUG$(tput sgr0) "
-      else
-        formatted_level="DEBUG "
-      fi
-      ;;
-    info|INFO)
-      plain_level="INFO"
-      if [[ -n "${use_color}" ]]; then
-        formatted_level="$(tput setaf 2)INFO$(tput sgr0)  "
-      else
-        formatted_level="INFO  "
-      fi
-      ;;
-    warn|WARN|warning|WARNING)
-      plain_level="WARN"
-      if [[ -n "${use_color}" ]]; then
-        formatted_level="$(tput setaf 3)WARN$(tput sgr0)  "
-      else
-        formatted_level="WARN  "
-      fi
-      ;;
-    error|ERROR)
-      plain_level="ERROR"
-      if [[ -n "${use_color}" ]]; then
-        formatted_level="$(tput setaf 1)ERROR$(tput sgr0) "
-      else
-        formatted_level="ERROR "
-      fi
-      ;;
-    fatal|FATAL)
-      plain_level="FATAL"
-      if [[ -n "${use_color}" ]]; then
-        formatted_level="$(tput setaf 1)FATAL$(tput sgr0) "
-      else
-        formatted_level="FATAL "
-      fi
-      ;;
+    # Determine if colored output should be used
+    # Colors are enabled when:
+    #   - Output format is plain (not JSON)
+    #   - Terminal is available (TERM is set and not "dumb")
+    #   - LOGGER_COLOR is not set (empty means colors enabled by default)
+    local use_color=""
+    if [[ "${LOGGER_OUTPUT_FORMAT}" != "json" ]]; then
+        if [[ -n "${TERM}" && "${TERM}" != "dumb" && -n "${LOGGER_COLOR}" ]]; then
+            use_color="true"
+        fi
+    fi
+
+    case "${log_level// /}" in
+    trace | TRACE)
+        if [[ -z "${LOGGER_NO_STACK// /}" ]]; then
+            # Create array with "LineNr FuncName ScriptName"
+            local -a functions=()
+            local frame=0
+            while caller "${frame}" >/dev/null 2>&1; do
+                functions+=("$(caller "${frame}")")
+                ((frame++))
+            done
+
+            create_stacktrace "${functions[@]}"
+        fi
+
+        plain_level="TRACE"
+        if [[ -n "${use_color}" ]]; then
+            formatted_level="$(tput setaf 7)TRACE$(tput sgr0) "
+        else
+            formatted_level="TRACE "
+        fi
+        ;;
+    debug | DEBUG)
+        plain_level="DEBUG"
+        if [[ -n "${use_color}" ]]; then
+            formatted_level="$(tput setaf 4)DEBUG$(tput sgr0) "
+        else
+            formatted_level="DEBUG "
+        fi
+        ;;
+    info | INFO)
+        plain_level="INFO"
+        if [[ -n "${use_color}" ]]; then
+            formatted_level="$(tput setaf 2)INFO$(tput sgr0)  "
+        else
+            formatted_level="INFO  "
+        fi
+        ;;
+    warn | WARN | warning | WARNING)
+        plain_level="WARN"
+        if [[ -n "${use_color}" ]]; then
+            formatted_level="$(tput setaf 3)WARN$(tput sgr0)  "
+        else
+            formatted_level="WARN  "
+        fi
+        ;;
+    error | ERROR)
+        plain_level="ERROR"
+        if [[ -n "${use_color}" ]]; then
+            formatted_level="$(tput setaf 1)ERROR$(tput sgr0) "
+        else
+            formatted_level="ERROR "
+        fi
+        ;;
+    fatal | FATAL)
+        plain_level="FATAL"
+        if [[ -n "${use_color}" ]]; then
+            formatted_level="$(tput setaf 1)FATAL$(tput sgr0) "
+        else
+            formatted_level="FATAL "
+        fi
+        ;;
     *)
-      plain_level="ERROR"
-      if [[ -n "${use_color}" ]]; then
-        formatted_level="$(tput setaf 9)ERROR$(tput sgr0) "
-      else
-        formatted_level="ERROR "
-      fi
+        plain_level="ERROR"
+        if [[ -n "${use_color}" ]]; then
+            formatted_level="$(tput setaf 9)ERROR$(tput sgr0) "
+        else
+            formatted_level="ERROR "
+        fi
 
-      # Handle invalid log level
-      if [[ "${LOGGER_OUTPUT_FORMAT}" == "json" ]]; then
+        # Handle invalid log level
+        if [[ "${LOGGER_OUTPUT_FORMAT}" == "json" ]]; then
+            local -a json_msg=()
+            [[ -n "${log_timestamp}" ]] && json_msg+=("timestamp:${log_timestamp}")
+            json_msg+=("level:ERROR")
+            json_msg+=("message:No log level like '${1}'")
+            print_json "${json_msg[@]}"
+        else
+            printf "%s%s%s\n" "${log_timestamp:+"${log_timestamp} "}" "${formatted_level}" "No log level like '${1}'"
+        fi
+        return 1
+        ;;
+    esac
+
+    # Output in JSON format
+    if [[ "${LOGGER_OUTPUT_FORMAT}" == "json" ]]; then
         local -a json_msg=()
         [[ -n "${log_timestamp}" ]] && json_msg+=("timestamp:${log_timestamp}")
-        json_msg+=("level:ERROR")
-        json_msg+=("message:No log level like '${1}'")
+        json_msg+=("level:${plain_level}")
+        [[ -z "${LOGGER_NO_STACK// /}" && -n "${__STACK__}" ]] && json_msg+=("stacktrace:${__STACK__}")
+        json_msg+=("message:${log_message}")
         print_json "${json_msg[@]}"
-      else
-        printf "%s%s%s\n" "${log_timestamp:+"${log_timestamp} "}" "${formatted_level}" "No log level like '${1}'"
-      fi
-      return 1
-      ;;
-  esac
-
-  # Output in JSON format
-  if [[ "${LOGGER_OUTPUT_FORMAT}" == "json" ]]; then
-    local -a json_msg=()
-    [[ -n "${log_timestamp}" ]] && json_msg+=("timestamp:${log_timestamp}")
-    json_msg+=("level:${plain_level}")
-    [[ -z "${LOGGER_NO_STACK// }" && -n "${__STACK__}" ]] && json_msg+=("stacktrace:${__STACK__}")
-    json_msg+=("message:${log_message}")
-    print_json "${json_msg[@]}"
-    unset __STACK__
-  # Output in plain format
-  else
-    if [[ -z "${LOGGER_NO_STACK// }" ]] || [[ -n "${__STACK__// }" ]]; then
-      # Print stacktrace if set
-      printf "%s%s%s%s\n" "${log_timestamp:+"${log_timestamp} "}" "${formatted_level}" "${__STACK__:+"[${__STACK__}] "}" "${log_message}"
-      unset __STACK__
+        unset __STACK__
+    # Output in plain format
     else
-      printf "%s%s%s\n" "${log_timestamp:+"${log_timestamp} "}" "${formatted_level}" "${log_message}"
+        if [[ -z "${LOGGER_NO_STACK// /}" ]] || [[ -n "${__STACK__// /}" ]]; then
+            # Print stacktrace if set
+            printf "%s%s%s%s\n" "${log_timestamp:+"${log_timestamp} "}" "${formatted_level}" "${__STACK__:+"[${__STACK__}] "}" "${log_message}"
+            unset __STACK__
+        else
+            printf "%s%s%s\n" "${log_timestamp:+"${log_timestamp} "}" "${formatted_level}" "${log_message}"
+        fi
     fi
-  fi
 }

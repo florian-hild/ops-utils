@@ -33,7 +33,7 @@ import notify_gotify
 
 export LOGGER_NO_TIMESTAMP="true"
 export LOGGER_COLOR="true"
-[[ -n "${DEBUG// }" ]] && export LOGGER_DEBUG_MODE="true"
+[[ -n "${DEBUG// /}" ]] && export LOGGER_DEBUG_MODE="true"
 
 # Constants
 # shellcheck disable=SC2155
@@ -101,7 +101,7 @@ validate_dependencies() {
 
     local -a required_cmds=("curl" "gzip" "find")
     for cmd in "${required_cmds[@]}"; do
-        if ! command -v "${cmd}" &> /dev/null; then
+        if ! command -v "${cmd}" &>/dev/null; then
             missing_deps+=("${cmd}")
         fi
     done
@@ -187,7 +187,7 @@ validate_encryption() {
     fi
 
     if [[ -n "${encrypt_enabled}" ]]; then
-        if ! command -v openssl &> /dev/null; then
+        if ! command -v openssl &>/dev/null; then
             log "error" "OpenSSL not found - required for encryption"
             return 1
         fi
@@ -223,10 +223,10 @@ get_backup_file() {
 
         if ! curl --silent --insecure \
             --user "${BACKUP_API_KEY}:${BACKUP_API_SECRET}" \
-            "${api_url}" | \
+            "${api_url}" |
             openssl enc -e -base64 -aes-256-cbc -pbkdf2 -md sha512 -iter 100000 \
-            -pass "pass:${BACKUP_ENCRYPTION_PASS}" | \
-            gzip --stdout - > "${BACKUP_DESTINATION_PATH}/${backup_filename}"; then
+                -pass "pass:${BACKUP_ENCRYPTION_PASS}" |
+            gzip --stdout - >"${BACKUP_DESTINATION_PATH}/${backup_filename}"; then
 
             exit_code=${PIPESTATUS[0]}
             log "error" "Backup download failed with exit code: ${exit_code}"
@@ -238,8 +238,8 @@ get_backup_file() {
 
         if ! curl --silent --insecure \
             --user "${BACKUP_API_KEY}:${BACKUP_API_SECRET}" \
-            "${api_url}" | \
-            gzip --stdout - > "${BACKUP_DESTINATION_PATH}/${backup_filename}"; then
+            "${api_url}" |
+            gzip --stdout - >"${BACKUP_DESTINATION_PATH}/${backup_filename}"; then
 
             exit_code=${PIPESTATUS[0]}
             log "error" "Backup download failed with exit code: ${exit_code}"
@@ -311,30 +311,30 @@ main() {
 
     while true; do
         case "${1}" in
-            -c | --config_path)
-                config_path="${2}"
-                shift 2
-                ;;
-            -h | --help)
-                print_help 0
-                ;;
-            -e | --encrypt)
-                encrypt="1"
-                shift
-                ;;
-            -v | --verbose)
-                export LOGGER_DEBUG_MODE="true"
-                set -xv
-                shift
-                ;;
-            --)
-                shift
-                break
-                ;;
-            *)
-                log "error" "Unrecognized option: ${1}"
-                print_help 1
-                ;;
+        -c | --config_path)
+            config_path="${2}"
+            shift 2
+            ;;
+        -h | --help)
+            print_help 0
+            ;;
+        -e | --encrypt)
+            encrypt="1"
+            shift
+            ;;
+        -v | --verbose)
+            export LOGGER_DEBUG_MODE="true"
+            set -xv
+            shift
+            ;;
+        --)
+            shift
+            break
+            ;;
+        *)
+            log "error" "Unrecognized option: ${1}"
+            print_help 1
+            ;;
         esac
     done
 
@@ -362,7 +362,8 @@ main() {
     # Download backup
     if ! get_backup_file "${encrypt}"; then
         log "error" "Backup operation failed"
-        alert_message=$(cat <<EOF
+        alert_message=$(
+            cat <<EOF
 **OPNsense Backup Failed**
 
 Failed to download OPNsense backup from API. Please investigate the issue.
@@ -373,7 +374,7 @@ Failed to download OPNsense backup from API. Please investigate the issue.
 - Timestamp: $(date)
 - Execution Host: $(hostname)
 EOF
-)
+        )
         send_alert "error" "OPNsense Backup Failed" "${alert_message}"
         exit 1
     fi

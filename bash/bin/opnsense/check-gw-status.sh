@@ -31,13 +31,13 @@ import logger
 
 export LOGGER_NO_TIMESTAMP="true"
 export LOGGER_COLOR="true"
-[[ -n "${DEBUG// }" ]] && export LOGGER_DEBUG_MODE="true"
+[[ -n "${DEBUG// /}" ]] && export LOGGER_DEBUG_MODE="true"
 
 # Constants
 readonly PLUGINCTL_CMD='/usr/local/sbin/pluginctl'
 readonly LOGFILE_PATH="${HOME}/local/log"
 
-if ! command -v jq &> /dev/null; then
+if ! command -v jq &>/dev/null; then
     log "error" "Required command 'jq' not found in PATH"
     exit 1
 fi
@@ -107,10 +107,10 @@ process_gateway() {
 
         # Add timestamp and normalize status in JSON output
         # shellcheck disable=SC2001
-        echo "${gateway_json}" | \
-            sed "s/{/{\"timestamp\":\"${timestamp}\",/" | \
-            jq -c | \
-            sed 's/"status":"none"/"status":"up"/g' >> "${logfile}"
+        echo "${gateway_json}" |
+            sed "s/{/{\"timestamp\":\"${timestamp}\",/" |
+            jq -c |
+            sed 's/"status":"none"/"status":"up"/g' >>"${logfile}"
 
         log "debug" "Downtime event recorded for '${gateway_name}'"
     fi
@@ -145,6 +145,6 @@ while IFS= read -r gateway_json; do
     if ! process_gateway "${gateway_json}"; then
         log "warn" "Failed to process gateway entry #${gateway_count}"
     fi
-done <<< "${gateway_list}"
+done <<<"${gateway_list}"
 
 log "info" "Processed ${gateway_count} gateway(s)"

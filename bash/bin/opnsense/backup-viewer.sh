@@ -31,7 +31,7 @@ import logger
 
 export LOGGER_NO_TIMESTAMP="true"
 export LOGGER_COLOR="true"
-[[ -n "${DEBUG// }" ]] && export LOGGER_DEBUG_MODE="true"
+[[ -n "${DEBUG// /}" ]] && export LOGGER_DEBUG_MODE="true"
 
 # Constants
 # shellcheck disable=SC2155
@@ -81,7 +81,7 @@ validate_dependencies() {
 
     local -a required_cmds=("openssl" "gzip" "file" "sed")
     for cmd in "${required_cmds[@]}"; do
-        if ! command -v "${cmd}" &> /dev/null; then
+        if ! command -v "${cmd}" &>/dev/null; then
             missing_deps+=("${cmd}")
         fi
     done
@@ -132,7 +132,7 @@ decrypt_file() {
 
     if [[ "${file_mime_type}" == "application/gzip" ]]; then
         # Gzipped + encrypted
-        if ! gzip --decompress --stdout "${backup_file}" | \
+        if ! gzip --decompress --stdout "${backup_file}" |
             openssl enc -d -base64 -aes-256-cbc -pbkdf2 -md sha512 -iter 100000 -pass "pass:${password}" 2>/dev/null; then
             log "error" "Decryption failed - incorrect password or corrupted file"
             return 1
@@ -223,26 +223,26 @@ main() {
 
     while true; do
         case "${1}" in
-            -f | --file)
-                backup_file="${2}"
-                shift 2
-                ;;
-            -h | --help)
-                print_help 0
-                ;;
-            -v | --verbose)
-                export LOGGER_DEBUG_MODE="true"
-                set -xv
-                shift
-                ;;
-            --)
-                shift
-                break
-                ;;
-            *)
-                log "error" "Unrecognized option: ${1}"
-                print_help 1
-                ;;
+        -f | --file)
+            backup_file="${2}"
+            shift 2
+            ;;
+        -h | --help)
+            print_help 0
+            ;;
+        -v | --verbose)
+            export LOGGER_DEBUG_MODE="true"
+            set -xv
+            shift
+            ;;
+        --)
+            shift
+            break
+            ;;
+        *)
+            log "error" "Unrecognized option: ${1}"
+            print_help 1
+            ;;
         esac
     done
 
