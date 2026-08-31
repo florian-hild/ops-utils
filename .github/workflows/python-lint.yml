@@ -18,9 +18,60 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  discover:
+    name: Discover projects
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      projects: ${{ steps.find.outputs.projects }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # One matrix leg per tracked directory holding a pyproject.toml, so a
+      # new python/bin/<name>/ project is linted without touching this file.
+      - name: Find python projects
+        id: find
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # Tracked files only, so untracked local junk never becomes a leg.
+          mapfile -t projects < <(
+            git ls-files -- python/ |
+              while IFS= read -r file; do
+                if [[ "${file##*/}" == "pyproject.toml" ]]; then
+                  printf '%s\n' "${file%/*}"
+                fi
+              done | sort -u
+          )
+
+          if [[ "${#projects[@]}" -eq 0 ]]; then
+            echo "::warning::No python projects found under python/"
+            echo "projects=[]" >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+
+          # A workflow command reads %, CR and LF as syntax, so anything that
+          # comes from a tool has to be escaped before it goes in.
+          json="$(printf '%s\n' "${projects[@]}" | jq -R . | jq -sc .)"
+
+          echo "Found ${#projects[@]} python project(s):"
+          printf '  %s\n' "${projects[@]}"
+
+          echo "projects=${json}" >> "${GITHUB_OUTPUT}"
+
   lint:
     name: Lint
+    needs: discover
+    if: needs.discover.outputs.projects != '[]'
+    strategy:
+      fail-fast: false
+      matrix:
+        project: ${{ fromJSON(needs.discover.outputs.projects) }}
     uses: florian-hild/reusable-workflows/.github/workflows/python-lint.yml@v2
     with:
       check_format: true
-      working_directory: python/bin/hetzner
+      working_directory: ${{ matrix.project }}
