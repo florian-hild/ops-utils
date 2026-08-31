@@ -46,7 +46,7 @@ def load_config(config_path: str) -> dict[str, str]:
 
 def write_log(log_file: Path, current_ip: str, last_ip: str, status: str):
     log_entry = {
-        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "timestamp": datetime.now().astimezone().strftime("%Y-%m-%d %H:%M:%S"),
         "current": current_ip,
         "last": last_ip,
         "status": status,

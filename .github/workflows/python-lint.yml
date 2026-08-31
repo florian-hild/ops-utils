@@ -23,4 +23,4 @@ jobs:
     uses: florian-hild/reusable-workflows/.github/workflows/python-lint.yml@v2
     with:
       check_format: true
-      working_directory: python
+      working_directory: python/bin/hetzner
