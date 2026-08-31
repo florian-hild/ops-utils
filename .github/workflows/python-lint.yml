@@ -23,22 +23,22 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:
-      projects: ${{ steps.find.outputs.projects }}
+      changed: ${{ steps.join.outputs.changed || '[]' }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
-      # One matrix leg per tracked directory holding a pyproject.toml, so a
-      # new python/bin/<name>/ project is linted without touching this file.
+      # One group per tracked directory holding a pyproject.toml, so a new
+      # python/bin/<name>/ project is picked up without touching this file.
       - name: Find python projects
         id: find
         shell: bash
         run: |
           set -euo pipefail
 
-          # Tracked files only, so untracked local junk never becomes a leg.
+          # Tracked files only, so untracked local junk never becomes a group.
           mapfile -t projects < <(
             git ls-files -- python/ |
               while IFS= read -r file; do
@@ -54,23 +54,55 @@ jobs:
             exit 0
           fi
 
-          # A workflow command reads %, CR and LF as syntax, so anything that
-          # comes from a tool has to be escaped before it goes in.
-          json="$(printf '%s\n' "${projects[@]}" | jq -R . | jq -sc .)"
-
           echo "Found ${#projects[@]} python project(s):"
           printf '  %s\n' "${projects[@]}"
 
-          echo "projects=${json}" >> "${GITHUB_OUTPUT}"
+          # Group keys stay p0..pN so the path-changes outputs remain valid
+          # identifiers; the join step maps them back to directories.
+          projects_json="$(printf '%s\n' "${projects[@]}" | jq -R . | jq -sc .)"
+          paths_json="$(
+            printf '%s\n' "${projects[@]}" | jq -R . | jq -sc \
+              'to_entries | map({key: ("p" + (.key | tostring)), value: [(.value + "/**")]}) | from_entries'
+          )"
+
+          echo "projects=${projects_json}" >> "${GITHUB_OUTPUT}"
+          echo "paths=${paths_json}" >> "${GITHUB_OUTPUT}"
+
+      # Manual runs have no base to diff against, so every group counts as
+      # changed there and the whole tree is linted.
+      - name: Detect changed projects
+        id: changes
+        if: steps.find.outputs.projects != '[]'
+        uses: florian-hild/actions/path-changes@v2
+        with:
+          paths: ${{ steps.find.outputs.paths }}
+
+      - name: Join changed projects
+        id: join
+        if: steps.find.outputs.projects != '[]'
+        shell: bash
+        env:
+          PROJECTS: ${{ steps.find.outputs.projects }}
+          RESULTS: ${{ steps.changes.outputs.results }}
+        run: |
+          set -euo pipefail
+
+          changed="$(
+            jq -cn --argjson projects "${PROJECTS}" --argjson results "${RESULTS}" \
+              '[$projects | to_entries[] | select($results[("p" + (.key | tostring))]) | .value]'
+          )"
+
+          echo "changed=${changed}" >> "${GITHUB_OUTPUT}"
+          echo "Changed project(s): ${changed}"
 
   lint:
     name: Lint
     needs: discover
-    if: needs.discover.outputs.projects != '[]'
+    if: needs.discover.outputs.changed != '[]'
     strategy:
       fail-fast: false
       matrix:
-        project: ${{ fromJSON(needs.discover.outputs.projects) }}
+        project: ${{ fromJSON(needs.discover.outputs.changed) }}
     uses: florian-hild/reusable-workflows/.github/workflows/python-lint.yml@v2
     with:
       check_format: true
