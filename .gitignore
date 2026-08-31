@@ -140,7 +140,7 @@ obj/
 *.jasper
 
 # Ignore generated files
-bin/
+/bin/
 gen/
 out/
 generated/
