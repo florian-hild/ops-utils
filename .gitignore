@@ -1,23 +1,9 @@
 # Ignore files used by bash scripts
 .env
 
-# Ignore files created by Python
-.venv
-venv/
-__pycache__/
-*.py[codz]
-*$py.class
-.pytest_cache/
-.ruff_cache/
-
-# Ignore files created by IDE's
-.vscode/
-.devcontainer*
-.theia/
-.Trash*
-
-# Ignore GIT files
-.worktree/
+# ==============================================================================
+# COMMON IGNORES
+# ==============================================================================
 
 # Ignore OS generated files
 .DS_Store
@@ -27,6 +13,8 @@ __pycache__/
 .Trashes
 ehthumbs.db
 Thumbs.db
+Icon?
+*.stackdump
 *.swp
 .cache/
 known_hosts
@@ -35,14 +23,140 @@ $RECYCLE.BIN/
 [Dd]esktop.ini
 *~
 
+# Ignore files created by IDE's
+.vscode/
+.devcontainer*
+.theia/
+.idea/
+.Trash*
+*.iml
+.metadata
+.settings/
+.loadpath
+.recommenders
+.externalToolBuilders/
+*.launch
+*.pydevproject
+.cproject
+.autotools
+.factorypath
+.buildpath
+.target
+.tern-project
+.springBeans
+.apt_generated/
+.apt_generated_test/
+.cache-main
+.scala_dependencies
+.worksheet
+.sts4-cache/
+.navigation/
+captures/
+**/nbproject/private/
+**/nbproject/Makefile-*.mk
+**/nbproject/Package-*.bash
+nbbuild/
+dist/
+nbdist/
+.nb-gradle/
+/out/
+
+# Ignore GIT files
+.worktree/
+# Created by git for backups.
+*.orig
+# Created by git when using merge tools for conflicts
+*.BACKUP.*
+*.BASE.*
+*.LOCAL.*
+*.REMOTE.*
+*_BACKUP_*.txt
+*_BASE_*.txt
+*_LOCAL_*.txt
+*_REMOTE_*.txt
+
+# Ignore files created by Python
+.venv/
+venv/
+__pycache__/
+*.py[codz]
+*$py.class
+.pytest_cache/
+.ruff_cache/
+
+# Ignore Gradle and build tools
+.gradle
+.kotlin
+gradle-app.setting
+.gradletasknamecache
+**/build/
+local.properties
+/*/build/
+/*/local.properties
+/*/out
+/*/*/build
+/*/*/production
+
+# Ignore Android build
+.android-sdk/
+.externalNativeBuild
+.cxx/
+*.apk
+*.aar
+*.ap_
+*.aab
+*.dex
+obj/
+
+# Ignore signing files
+.signing/
+*.jks
+*.keystore
+
 # Ignore compiled source
-*.com
 *.class
+*.com
 *.dll
 *.exe
 *.o
-*.so
+*.so.*
 *.rpm
+*.ko
+*.obj
+*.gch
+*.pch
+*.lib
+*.a
+*.la
+*.lo
+*.dylib
+*.out
+*.app
+*.dSYM/
+*.su
+*.idb
+*.pdb
+# Jasper files are created by Jasper when printing a jrxml file for the first time and contain the "precompiled" report
+*.jasper
+
+# Ignore generated files
+bin/
+gen/
+out/
+generated/
+copied/
+tmp/
+*.tmp
+*.bak
+*~.nib
+proguard/
+
+# Ignore logs and databases
+*.log
+*.log.*
+*.sql
+*.sqlite
+*.db*
 
 # Ignore packages
 # it's better to unpack these files and commit the raw source
@@ -52,15 +166,10 @@ $RECYCLE.BIN/
 *.gz
 *.iso
 *.jar
+# Exception for gradle wrapper jar, which is needed to build the project
 !gradle-wrapper.jar
 *.rar
 *.tar
 *.tar.gz
 *.tgz
 *.zip
-
-# Ignore Logs and databases
-*.log.*
-*.sql
-*.sqlite
-*.db*
