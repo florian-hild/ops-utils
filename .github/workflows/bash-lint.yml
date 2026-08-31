@@ -1,0 +1,56 @@
+---
+name: Bash Lint
+run-name: Bash Lint
+
+on:
+  pull_request:
+    types: [opened, reopened, ready_for_review, synchronize, labeled]
+    paths:
+      - .github/workflows/bash-lint.yml
+      - .editorconfig
+      - bash/**
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  changes:
+    name: Detect changed projects
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      changed: ${{ steps.pc.outputs.changed || '[]' }}
+      changed_dirs: ${{ steps.pc.outputs.changed_dirs || '' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # A project is the first three path segments under bash/
+      # (bash/bin/<name>, bash/lib/<name>), discovered from the git index so
+      # new projects need no workflow change. .editorconfig holds the shfmt
+      # rules for every script, so a change to it marks every project
+      # changed. Manual runs have no base to diff against, so every project
+      # counts as changed there.
+      - name: Detect changed projects
+        id: pc
+        uses: florian-hild/actions/path-changes@v2
+        with:
+          root: bash
+          depth: 3
+          include: .editorconfig
+
+  lint:
+    name: Lint
+    needs: changes
+    if: needs.changes.outputs.changed != '[]'
+    uses: florian-hild/reusable-workflows/.github/workflows/shell-lint.yml@v2
+    with:
+      check_format: true
+      paths: ${{ needs.changes.outputs.changed_dirs }}

@@ -31,7 +31,7 @@ import() {
 import notify_gotify
 
 export LOGGER_COLOR="true"
-[[ -n "${DEBUG// }" ]] && export LOGGER_DEBUG_MODE="true"
+[[ -n "${DEBUG// /}" ]] && export LOGGER_DEBUG_MODE="true"
 
 # Constants
 # shellcheck disable=SC2155
@@ -118,13 +118,14 @@ test_critical_alert_markdown() {
     reset_gotify_vars
 
     local md_message
-    md_message=$(cat <<EOF
+    md_message=$(
+        cat <<EOF
 **Critical Alert**
 - Service: database
 - Status: DOWN
 - Timestamp: $(date)
 EOF
-)
+    )
 
     send_alert "critical" "Unit Test - Critical" "${md_message}"
     print_test_result "Critical alert with Markdown" "PASS"
@@ -258,4 +259,3 @@ main() {
 
 # Entry point
 main "$@"
-

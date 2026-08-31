@@ -1,0 +1,55 @@
+---
+name: Python Lint
+run-name: Python Lint
+
+on:
+  pull_request:
+    types: [opened, reopened, ready_for_review, synchronize, labeled]
+    paths:
+      - .github/workflows/python-lint.yml
+      - python/**
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  changes:
+    name: Detect changed projects
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      changed: ${{ steps.pc.outputs.changed || '[]' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # A project is any directory under python/ holding a pyproject.toml;
+      # only the projects whose files changed are linted. New projects are
+      # picked up without touching this file. Manual runs have no base to
+      # diff against, so every project counts as changed there.
+      - name: Detect changed projects
+        id: pc
+        uses: florian-hild/actions/path-changes@v2
+        with:
+          root: python
+          marker: pyproject.toml
+
+  lint:
+    name: Lint
+    needs: changes
+    if: needs.changes.outputs.changed != '[]'
+    strategy:
+      fail-fast: false
+      matrix:
+        project: ${{ fromJSON(needs.changes.outputs.changed) }}
+    uses: florian-hild/reusable-workflows/.github/workflows/python-lint.yml@v2
+    with:
+      check_format: true
+      working_directory: ${{ matrix.project }}

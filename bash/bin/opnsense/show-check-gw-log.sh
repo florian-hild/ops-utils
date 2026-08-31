@@ -32,22 +32,22 @@ import logger
 
 export LOGGER_NO_TIMESTAMP="true"
 export LOGGER_COLOR="true"
-[[ -n "${DEBUG// }" ]] && export LOGGER_DEBUG_MODE="true"
+[[ -n "${DEBUG// /}" ]] && export LOGGER_DEBUG_MODE="true"
 
-if ! command -v jq >> /dev/null; then
+if ! command -v jq >>/dev/null; then
     log "error" "Required command 'jq' not found in PATH"
     exit 1
 fi
 
-if [[ -z "${LOGFILE// }" ]]; then
-  echo "Usage:"
-  echo "  $0 [jsonl-logfile]"
-  exit 2
+if [[ -z "${LOGFILE// /}" ]]; then
+    echo "Usage:"
+    echo "  $0 [jsonl-logfile]"
+    exit 2
 fi
 
 if [[ -r ${LOGFILE} ]]; then
-  jq '.timestamp + " | Status: " + .status + " | Loss: " + .loss' "${LOGFILE}"
+    jq '.timestamp + " | Status: " + .status + " | Loss: " + .loss' "${LOGFILE}"
 else
-  log "error" "File not found or not readable at path: '${LOGFILE}'"
-  exit 1
+    log "error" "File not found or not readable at path: '${LOGFILE}'"
+    exit 1
 fi

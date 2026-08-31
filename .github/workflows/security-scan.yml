@@ -1,0 +1,28 @@
+---
+name: Security Scan
+run-name: Security Scan
+
+# Trivy over this repository, through the shared workflow.
+
+on:
+  pull_request:
+    types: [opened, reopened, ready_for_review, synchronize, labeled]
+  schedule:
+    - cron: "11 5 * * 1" # new findings appear without the code changing
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: security-scan-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  trivy:
+    name: Trivy
+    permissions:
+      contents: read
+      pull-requests: write # report as a PR comment
+    uses: florian-hild/reusable-workflows/.github/workflows/security-scan.yml@v2
+...

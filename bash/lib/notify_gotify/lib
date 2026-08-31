@@ -10,8 +10,8 @@
 export LANG=C
 
 if [[ "${0}" == "${BASH_SOURCE[0]}" ]]; then
-  echo "This script must be sourced, not executed." >&2
-  exit 1
+    echo "This script must be sourced, not executed." >&2
+    exit 1
 fi
 
 # Configuration variables with defaults
@@ -64,16 +64,16 @@ send_alert() {
     # Validate required arguments
     if [[ ${#} -lt 3 ]]; then
         log "error" "Missing required arguments"
-        log "info"  "Usage:"
-        log "info"  "  send_alert <priority> <title> <message>"
-        log "info"  "Arguments:"
-        log "info"  "  priority     Notification level: info, warn, warning, error, critical"
-        log "info"  "  title        Short title for the Gotify notification"
-        log "info"  "  message      Detailed message body"
+        log "info" "Usage:"
+        log "info" "  send_alert <priority> <title> <message>"
+        log "info" "Arguments:"
+        log "info" "  priority     Notification level: info, warn, warning, error, critical"
+        log "info" "  title        Short title for the Gotify notification"
+        log "info" "  message      Detailed message body"
         return 1
     fi
 
-    if [[ -z "${GOTIFY_API_KEY// }" ]]; then
+    if [[ -z "${GOTIFY_API_KEY// /}" ]]; then
         log "error" "GOTIFY_API_KEY environment variable is not set"
         return 1
     fi
@@ -83,24 +83,24 @@ send_alert() {
 
     # Map priority levels to Gotify priority numbers
     case "${priority}" in
-        info|0)
-            priority_number="0"
-            ;;
-        warn|warning|1|2|3)
-            priority_number="3"
-            ;;
-        error|4|5|6|7)
-            priority_number="7"
-            ;;
-        critical|8|9|10)
-            priority_number="10"
-            ;;
-        *)
-            log "error" "Invalid priority: '${priority}'"
-            log "info"  "Supported values: info, warn, warning, error, critical (or 0-10)"
-            priority_number="7"
-            message="Invalid priority: '${priority}'\n\n${message}"
-            ;;
+    info | 0)
+        priority_number="0"
+        ;;
+    warn | warning | 1 | 2 | 3)
+        priority_number="3"
+        ;;
+    error | 4 | 5 | 6 | 7)
+        priority_number="7"
+        ;;
+    critical | 8 | 9 | 10)
+        priority_number="10"
+        ;;
+    *)
+        log "error" "Invalid priority: '${priority}'"
+        log "info" "Supported values: info, warn, warning, error, critical (or 0-10)"
+        priority_number="7"
+        message="Invalid priority: '${priority}'\n\n${message}"
+        ;;
     esac
 
     log "info" "Sending notification to Gotify server: '${GOTIFY_SERVER_URL}'"
@@ -115,7 +115,8 @@ send_alert() {
     escaped_title="$(printf '%s' "${title}" | sed 's/\\/\\\\/g; s/"/\\"/g')"
 
     # Build JSON payload
-    payload=$(cat <<EOF
+    payload=$(
+        cat <<EOF
 {
     "title": "${escaped_title}",
     "message": "${escaped_message}",
