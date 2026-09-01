@@ -41,7 +41,7 @@ jobs:
       # counts as changed there.
       - name: Detect changed projects
         id: pc
-        uses: florian-hild/actions/path-changes@v2
+        uses: florian-hild/actions/path-changes@8a2b300361935f119915d41091a9919d6595902b # v2
         with:
           root: bash
           depth: 3
