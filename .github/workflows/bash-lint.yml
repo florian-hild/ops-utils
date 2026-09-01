@@ -27,10 +27,11 @@ jobs:
       changed: ${{ steps.pc.outputs.changed || '[]' }}
       changed_dirs: ${{ steps.pc.outputs.changed_dirs || '' }}
     steps:
+      # Credentials persist on purpose: path-changes fetches the comparison
+      # base commit on demand, and an anonymous fetch is refused the day
+      # this repository turns private (git exit 128).
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
 
       # A project is the first three path segments under bash/
       # (bash/bin/<name>, bash/lib/<name>), discovered from the git index so

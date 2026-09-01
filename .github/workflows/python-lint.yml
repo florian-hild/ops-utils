@@ -25,10 +25,11 @@ jobs:
     outputs:
       changed: ${{ steps.pc.outputs.changed || '[]' }}
     steps:
+      # Credentials persist on purpose: path-changes fetches the comparison
+      # base commit on demand, and an anonymous fetch is refused the day
+      # this repository turns private (git exit 128).
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
 
       # A project is any directory under python/ holding a pyproject.toml;
       # only the projects whose files changed are linted. New projects are
