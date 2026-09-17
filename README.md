@@ -6,7 +6,6 @@ Small ops tools: bash libraries, bash scripts, and Python utilities.
 
 | Script | Description |
 |--------|-------------|
-| [`bash/bin/borg/backup.sh`](bash/bin/borg/backup.sh) | Create and prune backups with borgbackup |
 | [`bash/bin/docker/update.sh`](bash/bin/docker/update.sh) | Update docker containers from a compose file |
 | [`bash/bin/docker/update-history.sh`](bash/bin/docker/update-history.sh) | Show docker update history log |
 | [`bash/bin/opnsense/backup.sh`](bash/bin/opnsense/backup.sh) | Create OPNsense backup from config.xml |
@@ -26,6 +25,7 @@ Small ops tools: bash libraries, bash scripts, and Python utilities.
 
 | Tool | Description |
 |------|-------------|
+| [`python/bin/borg`](python/bin/borg) | Create, prune and check borg backups from a YAML configuration |
 | [`python/bin/hetzner`](python/bin/hetzner) | Update DNS records with the Hetzner API |
 
 ## License
