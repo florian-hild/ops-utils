@@ -1,0 +1,91 @@
+#-------------------------------------------------------------------------------
+# Description: Borg backup configuration for python/bin/borg/backup.py
+#              Copy to the host (e.g. /usr/local/etc/backup-borg.yaml, mode
+#              0600) and fill in the values. Secrets stay on the host.
+#-------------------------------------------------------------------------------
+
+# Backup targets - one 'borg create' runs against every entry. Plain strings
+# use the global rsh/remote_path defaults; mappings can override both per
+# repository (the Hetzner Storage Box needs remote_path borg-1.2 for a borg
+# 1.2 client, port 23 is its extended SSH service).
+repositories:
+  - ssh://borg@nas/<hostname>
+  - url: ssh://u123456sub1@u123456.your-storagebox.de:23/./<hostname>
+    remote_path: borg-1.2
+
+# Repository passphrase - or point to a 0600 file instead:
+# passphrase_file: /root/.borg-passphrase
+passphrase: secret
+
+# Defaults for all repositories (overridable per repository, see above)
+rsh: ssh -i /root/.ssh/id_ed25519
+remote_path: borg
+
+# Archive naming: <prefix>_<hostname>_<date>_<time>
+prefix: daily
+compression: zlib,5
+exclude:
+  - .DS_Store
+exclude_caches: true
+
+# Directories to back up. Glob patterns are expanded by the tool (relative
+# patterns resolve against log_dir's parent - prefer absolute paths).
+paths:
+  - /root
+  - /etc/passwd
+  - /etc/group
+  - /tmp/*.crontab
+
+# Database dumps (docker hosts only). The dump dir is backed up automatically.
+# keep_days removes older dump files.
+dumps:
+  dir: /root/backup/dumps
+  keep_days: 7
+
+# Per-container consistency handling, types:
+#   postgres: docker exec <name> pg_dumpall -U <user> (local socket, no password)
+#   sqlite:   sqlite3 ".backup" against the volume path (apt install sqlite3)
+#   stop:     docker stop before borg create, docker start afterwards
+containers:
+  - name: example-postgres
+    type: postgres
+    user: postgres
+  - name: example-app
+    type: sqlite
+    volume: example-app_data
+    database: app.sqlite3
+  - name: example-mongo
+    type: stop
+
+# Shell hooks (run via sh -c). A failing pre hook aborts the backup,
+# a failing post hook is only logged.
+hooks:
+  pre:
+    - crontab -l > /tmp/root.crontab
+  post: []
+
+# Retention for --prune
+prune:
+  keep_last: 4
+  keep_daily: 7
+  keep_weekly: 4
+  keep_monthly: 6
+  keep_yearly: 2
+
+# Gotify summary notification (success priority 3, failure 8)
+gotify:
+  url: https://gotify.lan.florian-hild.de
+  token: your-gotify-app-token
+
+# Prometheus pushgateway metrics (staleness of the pushed timestamp is the
+# 'backup did not run' dead man's switch - see the backup_rules alert rules)
+pushgateway:
+  url: https://pushgateway.lan.florian-hild.de
+  job: borg-backup
+
+# healthchecks.io dead man's switch (offsite, covers a dead host/site):
+# pings <url>/start at the beginning, <url> on success, <url>/fail on error
+healthcheck: https://hc-ping.com/your-uuid
+
+# Monthly log files (default: ~/local/log)
+log_dir: /root/local/log

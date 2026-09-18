@@ -1,0 +1,15 @@
+[project]
+name = "borg"
+version = "1.0.0"
+description = "Create, prune and check borg backups from a YAML configuration"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "pyyaml>=6.0",
+]
+
+[dependency-groups]
+dev = [
+    "ruff==0.16.5",
+    "pytest>=8.0",
+]
